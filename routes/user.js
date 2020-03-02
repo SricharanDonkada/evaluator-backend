@@ -12,6 +12,8 @@ const nodemailer = require('nodemailer');
 //IMPORTING MODELS
 const userData = require('../models/user-data');
 
+
+//SIGN-UP ROUTE AND SENDING AN EMAIL FOR CONFIRMATION OF ACCOUNT
 router.post('/sign-up',(req,res)=>{
     const user = new userData({
         username : req.body.username,
@@ -20,47 +22,88 @@ router.post('/sign-up',(req,res)=>{
     });
     user.save().then(data =>{
 
+        //CREATING A VARIABLE FOR LINK
+      const link = 'http://localhost:3000/user/email-verification/'+data._id;
 
-        //SENDING MAIL
-        function main() {
-            // Generate test SMTP service account from ethereal.email
-            // Only needed if you don't have a real mail account for testing
-            let testAccount =nodemailer.createTestAccount();
-          
-            // create reusable transporter object using the default SMTP transport
-            let transporter = nodemailer.createTransport({
 
-                secure: false, // true for 465, false for other ports
-                auth: {
-                  user: "ciesrkr@gmail.com", // generated ethereal user
-                  pass: "rkrseic#1"// generated ethereal password
-                }
-              });
-          
-            // send mail with defined transport object
-            let info = transporter.sendMail({
-                from: "ciesrkr@gmail.com", // sender address
-                to: "durganarayanavarma@gmail.com", // list of receivers
-                subject: "Hello ✔", // Subject line
-                text: "Hello world?", // plain text body
-                html: "<b>Hello world?</b>" // html body
-              });
-          
-            console.log("Message sent: %s", info.messageId);
-            // Message sent: <b658f8ca-6296-ccf4-8306-87d57a0b4321@example.com>
-          
-            // Preview only available when sending through an Ethereal account
-            console.log("Preview URL: %s", nodemailer.getTestMessageUrl(info));
-            // Preview URL: https://ethereal.email/message/WaQKMgKddxQDoou...
-          }
-          main();
-        
+      //SENDING AN MAIL
+      let transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        auth: {
+            user: 'ciesrkr@gmail.com',
+            pass: 'rkrseic#1'
+        }
+    });
+    
+    let mailOptions = {
+        from: 'ciesrkr@gmail.com',
+        to: data.mail,
+        subject: 'Test',
+        text: 'Click on the following link to verify your account : ' + link
+    };
+    
+    transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+            return console.log(error.message);
+        }
+        console.log('success');
+    });
+    
           console.log(data);
     })
     .catch(err =>{
         console.log(err);
     });
     res.end("200");
+});
+
+//IF THE GIVEN MAIL IS VERIFIED IT IS UPDATED AND REDIRECTED TO LOGIN PAGE
+router.get('/email-verification/:id', (req,res) =>
+{
+    console.log(req.params.id);
+    userData.findByIdAndUpdate( req.params.id  , { $set: { isVerified : true }} , {new: true}).then((userInfo) =>{
+        console.log(userInfo);
+    });
+    res.send('Your account has been verified please login and continue conding!!!!!');
+});
+
+
+
+//LOGIN ROUTE
+router.get('/login' , (req,res)=>{
+    console.log(req.body);
+    const mailId = req.body.mail;
+    const password = req.body.password; 
+
+    userData.findOne( { mail: mailId }).then((data) => {
+        console.log(data);
+        if(data.isVerified)
+        {
+            if( password === data.password)
+            {
+                console.log('user logged in');
+                
+            }
+            else{
+                console.log('password is incorrect');
+            }
+        }
+        else{
+            if(!data)
+            {
+                res.send('please sign-up');
+            }
+            else if(!data.isVerified)
+            {
+                res.send('please verify your account');
+            }
+        }
+    });
+
+    res.end("300");
 });
 
 module.exports = router;
