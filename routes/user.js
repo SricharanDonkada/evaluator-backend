@@ -17,13 +17,13 @@ const userData = require('../models/user-data');
 router.post('/sign-up',(req,res)=>{
     const user = new userData({
         username : req.body.username,
-        mail : req.body.mail,
+        email : req.body.email,
         password : req.body.password,
     });
     user.save().then(data =>{
 
         //CREATING A VARIABLE FOR LINK
-      const link = 'http://localhost:3000/user/email-verification/'+data._id;
+      const link = 'http://192.168.100.30:3000/user/email-verification/'+data._id;
 
 
       //SENDING AN MAIL
@@ -40,7 +40,7 @@ router.post('/sign-up',(req,res)=>{
     
     let mailOptions = {
         from: 'ciesrkr@gmail.com',
-        to: data.mail,
+        to: data.email,
         subject: 'Test',
         text: 'Click on the following link to verify your account : ' + link
     };
@@ -73,34 +73,46 @@ router.get('/email-verification/:id', (req,res) =>
 
 
 //LOGIN ROUTE
-router.get('/login' , (req,res)=>{
+router.post('/login' , (req,res)=>{
     console.log(req.body);
-    const mailId = req.body.mail;
+    const mailId = req.body.email;
     const password = req.body.password; 
 
-    userData.findOne( { mail: mailId }).then((data) => {
+    userData.findOne( { email: mailId }).then((data) => {
         console.log(data);
-        if(data.isVerified)
+        const user = {
+            username : data.username ,
+            email :  data.email,
+            userID : data._id
+        };
+        const message = '';
+
+        //ACCOUNT VERIFICATION
+
+        if(!data)
         {
-            if( password === data.password)
-            {
-                console.log('user logged in');
-                
+            if(password != data.password)
+            {  
+                message =  "Incorrect Password";
+                res.json({message : message , user: user});                
             }
             else{
-                console.log('password is incorrect');
+                if(data.isVerified)
+                {
+                    message ="";
+                    res.json({message : message , user: user});
+                }
+                else{
+                    message = "Your account has not been verified. Please verify your account";
+                    res.json({message : message , user: user});
+                }
             }
         }
         else{
-            if(!data)
-            {
-                res.send('please sign-up');
-            }
-            else if(!data.isVerified)
-            {
-                res.send('please verify your account');
-            }
+            message = "Account with given email doesnot exist";
+            res.json({message: message,  user : user });
         }
+
     });
 
     res.end("300");
