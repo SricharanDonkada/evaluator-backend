@@ -26,6 +26,8 @@ const questionDetailRoute = require('./routes/question');
 const evaluateRoute = require('./routes/evaluate');
 const submissionRoute = require('./routes/save-submittedQuestion');
 const savedQuestionDataRoute = require('./routes/getSavedCode');
+const getLeaderboardRoute = require('./routes/getleaderboard');
+
 
 
 // CONNECTING TO DB
@@ -44,9 +46,12 @@ app.listen(4000 ,()=>{
     console.log('server started at 4000');
 });
  
+
+//ROUTES
 app.use('/user', userRoute);
 app.use('/codejam' , codeJamRoute);
 app.use('/question-detail' , questionDetailRoute);
 app.use('/evaluate' , evaluateRoute);
 app.use('/submit-user-code' , submissionRoute);
 app.use('/saved-code' , savedQuestionDataRoute);
+app.use('/getleaderboard' , getLeaderboardRoute);
